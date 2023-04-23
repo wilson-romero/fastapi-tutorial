@@ -1,9 +1,10 @@
 from enum import Enum
-from typing import Optional
+from typing import List, Optional
 
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from pydantic import BaseModel
+from typing_extensions import Annotated
 
 
 class Item(BaseModel):
@@ -14,6 +15,27 @@ class Item(BaseModel):
 
 
 app = FastAPI()
+
+
+# @app.get("/items/")
+# async def read_items(q: Annotated[Optional[str], Query(min_length=3, max_length=20, regex="^fixedquery$")] = "fixedquery"):
+#     results = {"items": [{"item_id": "Foo"}, {"item_id": "Bar"}]}
+#     if q:
+#         results.update({"q": q})
+#     return results
+
+@app.get("/items/")
+async def read_items(q: Annotated[List[str],
+                                  Query(alias="item-query",
+                                        title="Query string",
+                                        description="Query string for the items to search in the database that have a good match",
+                                        min_length=3,
+                                        deprecated=True)
+                                  ] = ["foo", "bar"],
+                     hidden_query: Annotated[Optional[str], Query(include_in_schema=False)] = None
+                     ):
+    query_items = {"q": q}
+    return query_items
 
 
 @app.post("/items/")
