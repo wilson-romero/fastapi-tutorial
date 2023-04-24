@@ -3,8 +3,6 @@ import uvicorn
 from fastapi import Depends, FastAPI, Header, HTTPException
 from typing_extensions import Annotated
 
-app = FastAPI()
-
 
 async def verify_token(x_token: Annotated[str, Header()]):
     if x_token != "fake-super-secret-token":
@@ -16,10 +14,17 @@ async def verify_key(x_key: Annotated[str, Header()]):
         raise HTTPException(status_code=400, detail="X-Key header invalid")
     return x_key
 
+app = FastAPI(dependencies=[Depends(verify_token), Depends(verify_key)])
 
-@app.get("/items/", dependencies=[Depends(verify_token), Depends(verify_key)])
+
+@app.get("/items/")
 async def read_items():
-    return [{"item": "Foo"}, {"item": "Bar"}]
+    return [{"item": "Portal Gun"}, {"item": "Plumbus"}]
+
+
+@app.get("/users/")
+async def read_users():
+    return [{"username": "Rick"}, {"username": "Morty"}]
 
 if __name__ == "__main__":
     uvicorn.run(app="main:app", host="0.0.0.0", port=8000, reload=True)
