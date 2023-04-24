@@ -1,13 +1,14 @@
 
 import uvicorn
-from fastapi import FastAPI, status
+from fastapi import FastAPI, Form
+from typing_extensions import Annotated
 
 app = FastAPI()
 
 
-@app.post("/items/", status_code=status.HTTP_201_CREATED)
-async def create_item(name: str):
-    return {"name": name}
+@app.post("/login/")
+async def login(username: Annotated[str, Form()], password: Annotated[str, Form()]):
+    return {"username": username}
 
 
 if __name__ == "__main__":
