@@ -2,34 +2,30 @@
 from typing import Optional
 
 import uvicorn
-from fastapi import Depends, FastAPI
+from fastapi import Cookie, Depends, FastAPI
 from typing_extensions import Annotated
 
 app = FastAPI()
 
 
-fake_items_db = [
-    {"item_name": "Foo"},
-    {"item_name": "Bar"},
-    {"item_name": "Baz"}
-]
+def query_extractor(q: Optional[str] = None):
+    return q
 
 
-class CommonQueryParams:
-    def __init__(self, q: Optional[str] = None, skip: int = 0, limit: int = 100):
-        self.q = q
-        self.skip = skip
-        self.limit = limit
+def query_or_cookie_extractor(
+    q: Annotated[str, Depends(query_extractor)],
+    last_query: Annotated[Optional[str], Cookie()] = None,
+):
+    if not q:
+        return last_query
+    return q
 
 
 @app.get("/items/")
-async def read_items(commons: Annotated[CommonQueryParams, Depends()]):
-    response = {}
-    if commons.q:
-        response.update({"q": commons.q})
-    items = fake_items_db[commons.skip: commons.skip + commons.limit]
-    response.update({"items": items})
-    return response
+async def read_query(
+    query_or_default: Annotated[str, Depends(query_or_cookie_extractor)]
+):
+    return {"q_or_cookie": query_or_default}
 
 if __name__ == "__main__":
     uvicorn.run(app="main:app", host="0.0.0.0", port=8000, reload=True)
