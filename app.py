@@ -41,15 +41,75 @@ def create_heroes():
 
         session.commit()
 
+# Read the First Row
+# def select_heroes():
+#     with Session(engine) as session:
+#         statement = select(Hero).where(col(Hero.age) <= 35)
+#         results = session.exec(statement)
+#         hero = results.first()
+#         print("Hero:", hero)
 
+# First or None
+# def select_heroes():
+#     with Session(engine) as session:
+#         statement = select(Hero).where(Hero.age < 25)
+#         results = session.exec(statement)
+#         hero = results.first()
+#         print("Hero:", hero)
+
+# Exactly One
+# def select_heroes():
+#     with Session(engine) as session:
+#         statement = select(Hero).where(Hero.name == "Deadpond")
+#         results = session.exec(statement)
+#         hero = results.one()
+#         print("Hero:", hero)
+
+# Exactly One with More Data
+# def select_heroes():
+#     with Session(engine) as session:
+#         statement = select(Hero).where(Hero.age <= 35)
+#         results = session.exec(statement)
+#         hero = results.one()
+#         print("Hero:", hero)
+
+# Exactly One with No Data
+# def select_heroes():
+#     with Session(engine) as session:
+#         statement = select(Hero).where(Hero.age < 25)
+#         results = session.exec(statement)
+#         hero = results.one()
+#         print("Hero:", hero)
+
+
+# Compact Version
+# def select_heroes():
+#     with Session(engine) as session:
+#         hero = session.exec(select(Hero).where(Hero.name == "Deadpond")).one()
+#         print("Hero:", hero)
+
+# Select by Id with .where()
 def select_heroes():
     with Session(engine) as session:
-        statement = select(Hero).where(col(Hero.age) <= 35)
+        statement = select(Hero).where(Hero.id == 1)
         results = session.exec(statement)
-        for hero in results:
-            print(hero)
+        hero = results.first()
+        print("Hero:", hero)
+
+# Select by Id with .get()
+# def select_heroes():
+#     with Session(engine) as session:
+#         hero = session.get(Hero, 1)
+#         print("Hero:", hero)
 
 
+# Select by Id with .get() with No Data
+def select_heroes():
+    with Session(engine) as session:
+        hero = session.get(Hero, 9001)
+        print("Hero:", hero)
+
+        
 def main():
     create_db_and_tables()
     create_heroes()
