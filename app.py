@@ -1,6 +1,6 @@
 from typing import Optional
 
-from sqlmodel import Field, Session, SQLModel, col, create_engine, select
+from sqlmodel import Field, Session, SQLModel, create_engine, select
 
 
 class Hero(SQLModel, table=True):
@@ -41,60 +41,55 @@ def create_heroes():
 
         session.commit()
 
-# Read the First Row
-# def select_heroes():
+# # Set a Field Value
+# def update_heroes():
 #     with Session(engine) as session:
-#         statement = select(Hero).where(col(Hero.age) <= 35)
+#         statement = select(Hero).where(Hero.name == "Spider-Boy")
 #         results = session.exec(statement)
-#         hero = results.first()
+#         hero = results.one()
 #         print("Hero:", hero)
 
+#         hero.age = 16
+#         session.add(hero)
+#         session.commit()
+#         session.refresh(hero)
+#         print("Updated hero:", hero)
 
-# # Select by Id with .where()Review Select All
-# def select_heroes():
-#     with Session(engine) as session:
-#         statement = select(Hero)
-#         results = session.exec(statement)
-#         heroes = results.all()
-#         print(heroes)
+# Multiple Updates
 
-# # Select with Limit
-# def select_heroes():
-#     with Session(engine) as session:
-#         statement = select(Hero).limit(3)
-#         results = session.exec(statement)
-#         heroes = results.all()
-#         print(heroes)
 
-# # Select with Offset and Limit
-# def select_heroes():
-#     with Session(engine) as session:
-#         statement = select(Hero).offset(3).limit(3)
-#         results = session.exec(statement)
-#         heroes = results.all()
-#         print(heroes)
-
-# # Select Next Batch
-# def select_heroes():
-#     with Session(engine) as session:
-#         statement = select(Hero).offset(6).limit(3)
-#         results = session.exec(statement)
-#         heroes = results.all()
-#         print(heroes)
-
-# Combine Limit and Offset with Where
-def select_heroes():
+def update_heroes():
     with Session(engine) as session:
-        statement = select(Hero).where(Hero.age > 32).limit(3)
+        statement = select(Hero).where(Hero.name == "Spider-Boy")
         results = session.exec(statement)
-        heroes = results.all()
-        print(heroes)
+        hero_1 = results.one()
+        print("Hero 1:", hero_1)
+
+        statement = select(Hero).where(Hero.name == "Captain North America")
+        results = session.exec(statement)
+        hero_2 = results.one()
+        print("Hero 2:", hero_2)
+
+        hero_1.age = 16
+        hero_1.name = "Spider-Youngster"
+        session.add(hero_1)
+
+        hero_2.name = "Captain North America Except Canada"
+        hero_2.age = 110
+        session.add(hero_2)
+
+        session.commit()
+        session.refresh(hero_1)
+        session.refresh(hero_2)
+
+        print("Updated hero 1:", hero_1)  #
+        print("Updated hero 2:", hero_2)
 
 
 def main():
     create_db_and_tables()
     create_heroes()
-    select_heroes()
+    update_heroes()
 
 
 if __name__ == "__main__":
