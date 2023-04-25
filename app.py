@@ -49,67 +49,48 @@ def create_heroes():
 #         hero = results.first()
 #         print("Hero:", hero)
 
-# First or None
+
+# # Select by Id with .where()Review Select All
 # def select_heroes():
 #     with Session(engine) as session:
-#         statement = select(Hero).where(Hero.age < 25)
+#         statement = select(Hero)
 #         results = session.exec(statement)
-#         hero = results.first()
-#         print("Hero:", hero)
+#         heroes = results.all()
+#         print(heroes)
 
-# Exactly One
+# # Select with Limit
 # def select_heroes():
 #     with Session(engine) as session:
-#         statement = select(Hero).where(Hero.name == "Deadpond")
+#         statement = select(Hero).limit(3)
 #         results = session.exec(statement)
-#         hero = results.one()
-#         print("Hero:", hero)
+#         heroes = results.all()
+#         print(heroes)
 
-# Exactly One with More Data
+# # Select with Offset and Limit
 # def select_heroes():
 #     with Session(engine) as session:
-#         statement = select(Hero).where(Hero.age <= 35)
+#         statement = select(Hero).offset(3).limit(3)
 #         results = session.exec(statement)
-#         hero = results.one()
-#         print("Hero:", hero)
+#         heroes = results.all()
+#         print(heroes)
 
-# Exactly One with No Data
+# # Select Next Batch
 # def select_heroes():
 #     with Session(engine) as session:
-#         statement = select(Hero).where(Hero.age < 25)
+#         statement = select(Hero).offset(6).limit(3)
 #         results = session.exec(statement)
-#         hero = results.one()
-#         print("Hero:", hero)
+#         heroes = results.all()
+#         print(heroes)
 
-
-# Compact Version
-# def select_heroes():
-#     with Session(engine) as session:
-#         hero = session.exec(select(Hero).where(Hero.name == "Deadpond")).one()
-#         print("Hero:", hero)
-
-# Select by Id with .where()
+# Combine Limit and Offset with Where
 def select_heroes():
     with Session(engine) as session:
-        statement = select(Hero).where(Hero.id == 1)
+        statement = select(Hero).where(Hero.age > 32).limit(3)
         results = session.exec(statement)
-        hero = results.first()
-        print("Hero:", hero)
-
-# Select by Id with .get()
-# def select_heroes():
-#     with Session(engine) as session:
-#         hero = session.get(Hero, 1)
-#         print("Hero:", hero)
+        heroes = results.all()
+        print(heroes)
 
 
-# Select by Id with .get() with No Data
-def select_heroes():
-    with Session(engine) as session:
-        hero = session.get(Hero, 9001)
-        print("Hero:", hero)
-
-        
 def main():
     create_db_and_tables()
     create_heroes()
