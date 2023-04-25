@@ -10,6 +10,8 @@ email-validator = "*"
 python-multipart = "*"
 python-jose = {extras = ["cryptography"], version = "*"}
 passlib = {extras = ["bcrypt"], version = "*"}
+sqlmodel = "*"
+sqlalchemy2-stubs = "*"
 
 [dev-packages]
 autopep8 = "*"
