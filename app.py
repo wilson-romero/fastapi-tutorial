@@ -1,6 +1,14 @@
-from typing import Optional
+from typing import List, Optional
 
-from sqlmodel import Field, Session, SQLModel, create_engine, select
+from sqlmodel import Field, Relationship, Session, SQLModel, create_engine
+
+
+class Team(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str = Field(index=True)
+    headquarters: str
+
+    heroes: List["Hero"] = Relationship(back_populates="team")
 
 
 class Hero(SQLModel, table=True):
@@ -8,6 +16,9 @@ class Hero(SQLModel, table=True):
     name: str = Field(index=True)
     secret_name: str
     age: Optional[int] = Field(default=None, index=True)
+
+    team_id: Optional[int] = Field(default=None, foreign_key="team.id")
+    team: Optional[Team] = Relationship(back_populates="heroes")
 
 
 sqlite_file_name = "database.db"
@@ -21,75 +32,40 @@ def create_db_and_tables():
 
 
 def create_heroes():
-    hero_1 = Hero(name="Deadpond", secret_name="Dive Wilson")
-    hero_2 = Hero(name="Spider-Boy", secret_name="Pedro Parqueador")
-    hero_3 = Hero(name="Rusty-Man", secret_name="Tommy Sharp", age=48)
-    hero_4 = Hero(name="Tarantula", secret_name="Natalia Roman-on", age=32)
-    hero_5 = Hero(name="Black Lion", secret_name="Trevor Challa", age=35)
-    hero_6 = Hero(name="Dr. Weird", secret_name="Steve Weird", age=36)
-    hero_7 = Hero(name="Captain North America",
-                  secret_name="Esteban Rogelios", age=93)
-
     with Session(engine) as session:
-        session.add(hero_1)
-        session.add(hero_2)
-        session.add(hero_3)
-        session.add(hero_4)
-        session.add(hero_5)
-        session.add(hero_6)
-        session.add(hero_7)
+        team_preventers = Team(name="Preventers", headquarters="Sharp Tower")
+        team_z_force = Team(
+            name="Z-Force", headquarters="Sister Margaret’s Bar")
 
+        hero_deadpond = Hero(
+            name="Deadpond", secret_name="Dive Wilson", team=team_z_force
+        )
+        hero_rusty_man = Hero(
+            name="Rusty-Man", secret_name="Tommy Sharp", age=48, team=team_preventers
+        )
+        hero_spider_boy = Hero(
+            name="Spider-Boy", secret_name="Pedro Parqueador")
+        session.add(hero_deadpond)
+        session.add(hero_rusty_man)
+        session.add(hero_spider_boy)
         session.commit()
 
-# # Set a Field Value
-# def update_heroes():
-#     with Session(engine) as session:
-#         statement = select(Hero).where(Hero.name == "Spider-Boy")
-#         results = session.exec(statement)
-#         hero = results.one()
-#         print("Hero:", hero)
+        session.refresh(hero_deadpond)
+        session.refresh(hero_rusty_man)
+        session.refresh(hero_spider_boy)
 
-#         hero.age = 16
-#         session.add(hero)
-#         session.commit()
-#         session.refresh(hero)
-#         print("Updated hero:", hero)
+        print("Created hero:", hero_deadpond)
+        print("Created hero:", hero_rusty_man)
+        print("Created hero:", hero_spider_boy)
 
-# Multiple Updates
-
-
-def update_heroes():
-    with Session(engine) as session:
-        statement = select(Hero).where(Hero.name == "Spider-Boy")
-        results = session.exec(statement)
-        hero_1 = results.one()
-        print("Hero 1:", hero_1)
-
-        statement = select(Hero).where(Hero.name == "Captain North America")
-        results = session.exec(statement)
-        hero_2 = results.one()
-        print("Hero 2:", hero_2)
-
-        hero_1.age = 16
-        hero_1.name = "Spider-Youngster"
-        session.add(hero_1)
-
-        hero_2.name = "Captain North America Except Canada"
-        hero_2.age = 110
-        session.add(hero_2)
-
+        hero_spider_boy.team = team_preventers
+        session.add(hero_spider_boy)
         session.commit()
-        session.refresh(hero_1)
-        session.refresh(hero_2)
-
-        print("Updated hero 1:", hero_1)  #
-        print("Updated hero 2:", hero_2)
 
 
 def main():
     create_db_and_tables()
     create_heroes()
-    update_heroes()
 
 
 if __name__ == "__main__":
