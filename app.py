@@ -67,6 +67,12 @@ def create_heroes():
         session.refresh(hero_spider_boy)
         print("Updated hero:", hero_spider_boy)
 
+        hero_spider_boy.team_id = None
+        session.add(hero_spider_boy)
+        session.commit()
+        session.refresh(hero_spider_boy)
+        print("No longer Preventer:", hero_spider_boy)
+
 
 def main():
     create_db_and_tables()
