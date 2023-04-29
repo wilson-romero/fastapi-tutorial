@@ -81,10 +81,22 @@ def update_hero(hero_id: int, hero: HeroUpdate):
         if not db_hero:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Hero not found")
-        hero_data = hero.dict(exclude_unset=True) # exclude_unset=True will only update the fields that are set in the request
+        # exclude_unset=True will only update the fields that are set in the request
+        hero_data = hero.dict(exclude_unset=True)
         for key, value in hero_data.items():
             setattr(db_hero, key, value)
         session.add(db_hero)
         session.commit()
         session.refresh(db_hero)
         return db_hero
+
+
+@app.delete("/heroes/{hero_id}")
+def delete_hero(hero_id: int):
+    with Session(engine) as session:
+        hero = session.get(Hero, hero_id)
+        if not hero:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Hero not found")
+        session.delete(hero)
+        session.commit()
+        return {"ok": True}
