@@ -22,6 +22,12 @@ class HeroRead(HeroBase):
     id: int
 
 
+class HeroUpdate(SQLModel):
+    name: Optional[str] = None
+    secret_name: Optional[str] = None
+    age: Optional[int] = None
+
+
 sqlite_file_name = "database.db"
 sqlite_url = f"sqlite:///{sqlite_file_name}"
 
@@ -66,3 +72,19 @@ def read_hero(hero_id: int):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Hero not found")
         return hero
+
+
+@app.patch("/heroes/{hero_id}", response_model=HeroRead)
+def update_hero(hero_id: int, hero: HeroUpdate):
+    with Session(engine) as session:
+        db_hero = session.get(Hero, hero_id)
+        if not db_hero:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Hero not found")
+        hero_data = hero.dict(exclude_unset=True) # exclude_unset=True will only update the fields that are set in the request
+        for key, value in hero_data.items():
+            setattr(db_hero, key, value)
+        session.add(db_hero)
+        session.commit()
+        session.refresh(db_hero)
+        return db_hero
