@@ -1,29 +1,7 @@
 from typing import List, Optional
 
-from sqlmodel import Field, Relationship, SQLModel, create_engine
-
-
-class Weapon(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    name: str = Field(index=True)
-
-    hero: "Hero" = Relationship(back_populates="weapon")
-
-
-class Power(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    name: str = Field(index=True)
-
-    hero_id: int = Field(foreign_key="hero.id")
-    hero: "Hero" = Relationship(back_populates="powers")
-
-
-class Team(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    name: str = Field(index=True)
-    headquarters: str
-
-    heroes: List["Hero"] = Relationship(back_populates="team")
+from fastapi import FastAPI
+from sqlmodel import Field, Session, SQLModel, create_engine, select
 
 
 class Hero(SQLModel, table=True):
@@ -32,30 +10,37 @@ class Hero(SQLModel, table=True):
     secret_name: str
     age: Optional[int] = Field(default=None, index=True)
 
-    team_id: Optional[int] = Field(default=None, foreign_key="team.id")
-    team: Optional[Team] = Relationship(back_populates="heroes")
-
-    weapon_id: Optional[int] = Field(default=None, foreign_key="weapon.id")
-    weapon: Optional[Weapon] = Relationship(back_populates="hero")
-
-    powers: List[Power] = Relationship(back_populates="hero")
-
 
 sqlite_file_name = "database.db"
 sqlite_url = f"sqlite:///{sqlite_file_name}"
 
-engine = create_engine(sqlite_url, echo=True)
+connect_args = {"check_same_thread": False}
+engine = create_engine(sqlite_url, echo=True, connect_args=connect_args)
 
 
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
 
 
-def main():
+app = FastAPI()
+
+
+@app.on_event("startup")
+def on_startup():
     create_db_and_tables()
-    create_heroes()
-    update_heroes()
 
 
-if __name__ == "__main__":
-    main()
+@app.post("/heroes/")
+def create_hero(hero: Hero, response_model=Hero):
+    with Session(engine) as session:
+        session.add(hero)
+        session.commit()
+        session.refresh(hero)
+        return hero
+
+
+@app.get("/heroes/", response_model=List[Hero])
+def read_heroes():
+    with Session(engine) as session:
+        heroes = session.exec(select(Hero)).all()
+        return heroes
