@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, Query, status
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
 
@@ -51,16 +51,18 @@ def create_hero(hero: HeroCreate):
         return db_hero
 
 
-@app.get("/heroes/", response_model=List[Hero])
-def read_heroes():
+@app.get("/heroes/", response_model=List[HeroRead])
+def read_heroes(offset: int = 0, limit: int = Query(default=100, lte=100)):
     with Session(engine) as session:
-        heroes = session.exec(select(Hero)).all()
+        heroes = session.exec(select(Hero).offset(offset).limit(limit)).all()
         return heroes
+
 
 @app.get("/heroes/{hero_id}", response_model=HeroRead)
 def read_hero(hero_id: int):
     with Session(engine) as session:
         hero = session.get(Hero, hero_id)
         if not hero:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Hero not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Hero not found")
         return hero
