@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from fastapi import Depends, FastAPI, HTTPException, Query, status
+from fastapi import Depends, FastAPI, HTTPException, Query
 from sqlmodel import (Field, Relationship, Session, SQLModel, create_engine,
                       select)
 
@@ -25,6 +25,7 @@ class TeamRead(TeamBase):
 
 
 class TeamUpdate(SQLModel):
+    id: Optional[int] = None
     name: Optional[str] = None
     headquarters: Optional[str] = None
 
@@ -43,12 +44,12 @@ class Hero(HeroBase, table=True):
     team: Optional[Team] = Relationship(back_populates="heroes")
 
 
-class HeroCreate(HeroBase):
-    pass
-
-
 class HeroRead(HeroBase):
     id: int
+
+
+class HeroCreate(HeroBase):
+    pass
 
 
 class HeroUpdate(SQLModel):
@@ -56,6 +57,14 @@ class HeroUpdate(SQLModel):
     secret_name: Optional[str] = None
     age: Optional[int] = None
     team_id: Optional[int] = None
+
+
+class HeroReadWithTeam(HeroRead):
+    team: Optional[TeamRead] = None
+
+
+class TeamReadWithHeroes(TeamRead):
+    heroes: List[HeroRead] = []
 
 
 sqlite_file_name = "database.db"
@@ -82,6 +91,61 @@ def on_startup():
     create_db_and_tables()
 
 
+@app.post("/heroes/", response_model=HeroRead)
+def create_hero(*, session: Session = Depends(get_session), hero: HeroCreate):
+    db_hero = Hero.from_orm(hero)
+    session.add(db_hero)
+    session.commit()
+    session.refresh(db_hero)
+    return db_hero
+
+
+@app.get("/heroes/", response_model=List[HeroRead])
+def read_heroes(
+    *,
+    session: Session = Depends(get_session),
+    offset: int = 0,
+    limit: int = Query(default=100, lte=100),
+):
+    heroes = session.exec(select(Hero).offset(offset).limit(limit)).all()
+    return heroes
+
+
+@app.get("/heroes/{hero_id}", response_model=HeroReadWithTeam)
+def read_hero(*, session: Session = Depends(get_session), hero_id: int):
+    hero = session.get(Hero, hero_id)
+    if not hero:
+        raise HTTPException(status_code=404, detail="Hero not found")
+    return hero
+
+
+@app.patch("/heroes/{hero_id}", response_model=HeroRead)
+def update_hero(
+    *, session: Session = Depends(get_session), hero_id: int, hero: HeroUpdate
+):
+    db_hero = session.get(Hero, hero_id)
+    if not db_hero:
+        raise HTTPException(status_code=404, detail="Hero not found")
+    hero_data = hero.dict(exclude_unset=True)
+    for key, value in hero_data.items():
+        setattr(db_hero, key, value)
+    session.add(db_hero)
+    session.commit()
+    session.refresh(db_hero)
+    return db_hero
+
+
+@app.delete("/heroes/{hero_id}")
+def delete_hero(*, session: Session = Depends(get_session), hero_id: int):
+
+    hero = session.get(Hero, hero_id)
+    if not hero:
+        raise HTTPException(status_code=404, detail="Hero not found")
+    session.delete(hero)
+    session.commit()
+    return {"ok": True}
+
+
 @app.post("/teams/", response_model=TeamRead)
 def create_team(*, session: Session = Depends(get_session), team: TeamCreate):
     db_team = Team.from_orm(team)
@@ -102,7 +166,7 @@ def read_teams(
     return teams
 
 
-@app.get("/teams/{team_id}", response_model=TeamRead)
+@app.get("/teams/{team_id}", response_model=TeamReadWithHeroes)
 def read_team(*, team_id: int, session: Session = Depends(get_session)):
     team = session.get(Team, team_id)
     if not team:
@@ -135,59 +199,5 @@ def delete_team(*, session: Session = Depends(get_session), team_id: int):
     if not team:
         raise HTTPException(status_code=404, detail="Team not found")
     session.delete(team)
-    session.commit()
-    return {"ok": True}
-
-
-@app.post("/heroes/", response_model=HeroRead)
-def create_hero(*, session: Session = Depends(get_session), hero: HeroCreate):
-    db_hero = Hero.from_orm(hero)
-    session.add(db_hero)
-    session.commit()
-    session.refresh(db_hero)
-    return db_hero
-
-
-@app.get("/heroes/", response_model=List[HeroRead])
-def read_heroes(*,
-                session: Session = Depends(get_session),
-                offset: int = 0, limit: int = Query(default=100, lte=100)):
-    heroes = session.exec(select(Hero).offset(offset).limit(limit)).all()
-    return heroes
-
-
-@app.get("/heroes/{hero_id}", response_model=HeroRead)
-def read_hero(*, session: Session = Depends(get_session), hero_id: int):
-    hero = session.get(Hero, hero_id)
-    if not hero:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Hero not found")
-    return hero
-
-
-@app.patch("/heroes/{hero_id}", response_model=HeroRead)
-def update_hero(*, session: Session = Depends(get_session),
-                hero_id: int, hero: HeroUpdate):
-    db_hero = session.get(Hero, hero_id)
-    if not db_hero:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Hero not found")
-    # exclude_unset=True will only update the fields that are set in the request
-    hero_data = hero.dict(exclude_unset=True)
-    for key, value in hero_data.items():
-        setattr(db_hero, key, value)
-    session.add(db_hero)
-    session.commit()
-    session.refresh(db_hero)
-    return db_hero
-
-
-@app.delete("/heroes/{hero_id}")
-def delete_hero(*, session: Session = Depends(get_session), hero_id: int):
-    hero = session.get(Hero, hero_id)
-    if not hero:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Hero not found")
-    session.delete(hero)
     session.commit()
     return {"ok": True}
