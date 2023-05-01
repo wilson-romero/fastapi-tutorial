@@ -15,6 +15,10 @@ sqlalchemy2-stubs = "*"
 
 [dev-packages]
 autopep8 = "*"
+install = "*"
+requests = "*"
+pytest = "*"
+httpx = "*"
 
 [requires]
 python_version = "3.8"
